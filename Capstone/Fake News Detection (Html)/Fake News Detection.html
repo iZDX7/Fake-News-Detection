@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Fake News Detection | Zeyad Talal | التحليل الكامل</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-page: #f4f6fa;
+      --surface: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --border: #cbd5e1;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --card-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      --code-bg: #f1f5f9;
+      --chart-grid: #cbd5e1;
+    }
+    body.theme-green {
+      --bg-page: #f0fdf4;
+      --surface: #ffffff;
+      --text-primary: #14532d;
+      --text-secondary: #166534;
+      --border: #bbf7d0;
+      --accent: #16a34a;
+      --accent-hover: #15803d;
+      --code-bg: #dcfce7;
+      --chart-grid: #86efac;
+    }
+    body.theme-orange {
+      --bg-page: #2d1a0c;
+      --surface: #3e2a1f;
+      --text-primary: #ffedd5;
+      --text-secondary: #fed7aa;
+      --border: #9a3412;
+      --accent: #ea580c;
+      --accent-hover: #c2410c;
+      --code-bg: #431407;
+      --chart-grid: #c2410c;
+    }
+    body.theme-dark {
+      --bg-page: #0f172a;
+      --surface: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e6;
+      --border: #334155;
+      --accent: #60a5fa;
+      --accent-hover: #3b82f6;
+      --code-bg: #0f172a;
+      --chart-grid: #475569;
+    }
+    body.theme-purple {
+      --bg-page: #f5f3ff;
+      --surface: #ffffff;
+      --text-primary: #3b0764;
+      --text-secondary: #5b21b6;
+      --border: #ddd6fe;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --code-bg: #ede9fe;
+      --chart-grid: #c4b5fd;
+    }
+    body.theme-blue {
+      --bg-page: #f4f6fa;
+      --surface: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --border: #cbd5e1;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --code-bg: #f1f5f9;
+      --chart-grid: #94a3b8;
+    }
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.55;
+      transition: background 0.2s, color 0.2s;
+      padding: 1.5rem;
+    }
+    body[dir="ltr"] { direction: ltr; text-align: left; }
+    body[dir="rtl"] { direction: rtl; text-align: right; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .theme-select, .icon-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2rem;
+      padding: 0.45rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .theme-select:hover, .icon-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .nav-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 2rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .tab-btn:hover:not(.active) {
+      background: var(--surface);
+      color: var(--accent);
+    }
+    .content-pane { display: none; animation: fade 0.2s ease; }
+    .content-pane.active-pane { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(5px);} to { opacity: 1; transform: translateY(0);} }
+    .card {
+      background: var(--surface);
+      border-radius: 1.25rem;
+      border: 1px solid var(--border);
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+    .card h2 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      border-right: 4px solid var(--accent);
+      padding-right: 1rem;
+    }
+    body[dir="ltr"] .card h2 { border-right: none; border-left: 4px solid var(--accent); padding-left: 1rem; padding-right: 0; }
+    ul, p { color: var(--text-secondary); margin-bottom: 0.85rem; line-height: 1.6; }
+    ul { padding-right: 1.6rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.2rem 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.7rem;
+      text-align: center;
+    }
+    th { background: var(--code-bg); font-weight: 600; }
+    .stats-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .stat-card {
+      background: var(--code-bg);
+      border-radius: 1rem;
+      padding: 0.8rem 1.2rem;
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+      font-weight: 500;
+    }
+    .chart-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+    .chart-box {
+      flex: 1;
+      min-width: 280px;
+      background: var(--code-bg);
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+    canvas { max-height: 350px; width: 100%; }
+    .heatmap-canvas { max-width: 300px; margin: 0 auto; }
+    .footer-note {
+      margin-top: 2rem;
+      text-align: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .developer-icon {
+      font-size: 1.5rem;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    @media (max-width: 700px) {
+      body { padding: 1rem; }
+      .tab-btn { padding: 0.4rem 1rem; font-size: 0.85rem; }
+      .card { padding: 1.2rem; }
+      .top-bar { justify-content: center; }
+    }
+  </style>
+</head>
+<body dir="rtl" class="theme-blue">
+<div class="container">
+  <div class="top-bar">
+    <select id="themeSelect" class="theme-select">
+      <option value="blue">🎨 أزرق فاتح</option>
+      <option value="green">🌿 أخضر فاتح</option>
+      <option value="orange">🍊 برتقالي داكن</option>
+      <option value="dark">🌙 داكن (ليلي)</option>
+      <option value="purple">💜 أرجواني فاتح</option>
+    </select>
+    <button id="langToggleBtn" class="icon-btn">🌐 English / العربية</button>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" data-tab="overview" i18n="tab_overview">نظرة عامة</button>
+    <button class="tab-btn" data-tab="models" i18n="tab_models">النماذج</button>
+    <button class="tab-btn" data-tab="results" i18n="tab_results">النتائج والمقارنة</button>
+    <button class="tab-btn" data-tab="charts" i18n="tab_charts">رسوم بيانية</button>
+    <button class="tab-btn" data-tab="about" i18n="tab_about">عن المطور</button>
+  </div>
+
+  <!-- نظرة عامة -->
+  <div id="overview" class="content-pane active-pane">
+    <div class="card"><h2 i18n="overview_title1">ما هو نظام كشف الأخبار المزيفة؟</h2>
+      <p i18n="overview_text1">هذا المشروع يبني نموذج ذكاء اصطناعي يميز بين الخبر الحقيقي والمزيف باستخدام تعلم الآلة والشبكات العصبية (LSTM). تم استخدام مجموعة بيانات حقيقية من Kaggle تحتوي على 44,898 مقالاً (21,417 حقيقي، 23,481 مزيف).</p>
+      <p i18n="overview_text2"><strong>الخطوات الأساسية:</strong> تنظيف النصوص، تحويل الكلمات إلى أرقام، تدريب 3 نماذج تعلم آلي وشبكة LSTM، ثم مقارنة الأداء باستخدام F1-score.</p>
+    </div>
+    <div class="card"><h2 i18n="data_title">البيانات والتنظيف</h2>
+      <div class="stats-grid">
+        <div class="stat-card" i18n="real_count">أخبار حقيقية: 21,417</div>
+        <div class="stat-card" i18n="fake_count">أخبار مزيفة: 23,481</div>
+        <div class="stat-card" i18n="total_count">المجموع: 44,898 مقال</div>
+      </div>
+      <p i18n="data_desc">مجموعة بيانات من Kaggle تحتوي على 44,898 مقالاً (21,417 حقيقي، 23,481 مزيف).</p>
+      <p i18n="cleaning_steps"><strong>خطوات التنظيف:</strong> تحويل الحروف إلى صغيرة، إزالة الرموز والأرقام، إزالة stopwords (مثل "the", "and")، وإزالة التكرارات. تم حفظ النص النظيف في عمود clean_text.</p>
+      <p i18n="cleaning_note">هذه المرحلة ضرورية جداً لأن النصوص غير النظيفة تسبب ضعفاً في أداء النماذج.</p>
+    </div>
+    <div class="card"><h2 i18n="simple_title">شرح مبسط (لغير المبرمجين)</h2>
+      <ul>
+        <li i18n="simple_li1">تدريب الحاسوب على آلاف الأمثلة من الأخبار الحقيقية والمزيفة.</li>
+        <li i18n="simple_li2">تنظيف النص من الرموز والكلمات غير المفيدة.</li>
+        <li i18n="simple_li3">تحويل الكلمات إلى أرقام ليتمكن النموذج من فهمها.</li>
+        <li i18n="simple_li4">تدريب 3 نماذج تعلم آلي وشبكة LSTM.</li>
+        <li i18n="simple_li5">مقارنة الأداء واختيار الأفضل باستخدام F1-score.</li>
+      </ul>
+      <p i18n="simple_result">النتيجة: أفضل نموذج هو Logistic Regression (F1=0.989) والشبكة LSTM (0.985) – دقة عالية جداً.</p>
+    </div>
+  </div>
+
+  <!-- النماذج -->
+  <div id="models" class="content-pane">
+    <div class="card"><h2 i18n="ml_title">نماذج التعلم الآلي (Machine Learning)</h2>
+      <p i18n="ml_desc">تم تحويل النص إلى أرقام باستخدام TF-IDF (5000 كلمة). النماذج المدربة:</p>
+      <ul>
+        <li i18n="ml_lr"><strong>Logistic Regression:</strong> نموذج خطي سريع ممتاز للنصوص عالية الأبعاد.</li>
+        <li i18n="ml_rf"><strong>Random Forest:</strong> 200 شجرة قرار، أداء جيد لكن أبطأ.</li>
+        <li i18n="ml_knn"><strong>K-Nearest Neighbors (KNN):</strong> نموذج قائم على الجيران، أضعف مع البيانات النصية المتفرقة.</li>
+      </ul>
+      <p i18n="ml_eval">أفضل أداء كان لـ Logistic Regression (F1=0.989).</p>
+    </div>
+    <div class="card"><h2 i18n="lstm_title">الشبكة العصبية LSTM</h2>
+      <p i18n="lstm_desc">شبكة LSTM (Long Short‑Term Memory) متخصصة في تسلسل الكلمات وسياق الجملة. البنية المستخدمة:</p>
+      <ul>
+        <li i18n="lstm_layer1">Embedding (10000, 64) → متجهات كثيفة للكلمات.</li>
+        <li i18n="lstm_layer2">LSTM (64 وحدة) → تعلم العلاقات الزمنية.</li>
+        <li i18n="lstm_layer3">Dropout (0.3) لمنع overfitting.</li>
+        <li i18n="lstm_layer4">Dense (32) + Dense (1, Sigmoid) للتصنيف الثنائي.</li>
+      </ul>
+      <p i18n="lstm_train">تم تدريب النموذج لمدة 10 عصور (epochs) وحجم دفعة 64. نتائج LSTM: دقة 98.5% و F1=0.985.</p>
+    </div>
+  </div>
+
+  <!-- النتائج -->
+  <div id="results" class="content-pane">
+    <div class="card"><h2 i18n="compare_title">جدول المقارنة النهائي</h2>
+      <table>
+        <thead><tr><th i18n="th_model">النموذج</th><th i18n="th_acc">Accuracy</th><th i18n="th_prec">Precision</th><th i18n="th_rec">Recall</th><th i18n="th_f1">F1-Score</th></tr></thead>
+        <tbody>
+          <tr><td i18n="model_lr">Logistic Regression</td><td>98.9%</td><td>98.8%</td><td>99.0%</td><td>0.989</td></tr>
+          <tr><td i18n="model_rf">Random Forest</td><td>98.1%</td><td>97.9%</td><td>98.3%</td><td>0.981</td></tr>
+          <tr><td i18n="model_knn">KNN</td><td>94.9%</td><td>94.8%</td><td>95.1%</td><td>0.949</td></tr>
+          <tr><td i18n="model_lstm">LSTM (Neural Network)</td><td>98.5%</td><td>98.5%</td><td>98.6%</td><td>0.985</td></tr>
+        </tbody>
+      </table>
+      <p i18n="best_statement"><strong>التحليل:</strong> Logistic Regression هو الأفضل من حيث التوازن بين السرعة والدقة (F1=0.989). LSTM قريب جداً مع فهم أعمق للسياق.</p>
+    </div>
+    <div class="card"><h2 i18n="cm_title">مصفوفة الارتباك لأفضل نموذج (Logistic Regression)</h2>
+      <div class="stats-grid">
+        <div class="stat-card" i18n="cm_tp">حقيقي → توقع حقيقي: 4231</div>
+        <div class="stat-card" i18n="cm_fp">حقيقي → توقع مزيف: 48</div>
+        <div class="stat-card" i18n="cm_fn">مزيف → توقع حقيقي: 31</div>
+        <div class="stat-card" i18n="cm_tn">مزيف → توقع مزيف: 4180</div>
+      </div>
+      <p i18n="conclusion">الخلاصة: كلا النهجين يصلحان، لكن Logistic Regression مثالي للتطبيقات العملية لسرعة تدريبه العالية.</p>
+    </div>
+  </div>
+
+  <!-- الرسوم البيانية -->
+  <div id="charts" class="content-pane">
+    <div class="card"><h2 i18n="chart_f1_title">مقارنة F1-Score للنماذج</h2><div class="chart-container"><div class="chart-box"><canvas id="f1Chart" width="400" height="300"></canvas></div></div></div>
+    <div class="card"><h2 i18n="chart_heat_title">مصفوفة الارتباك بشكل حراري (Logistic Regression)</h2><div class="chart-container"><div class="chart-box heatmap-canvas"><canvas id="confusionHeatmap" width="300" height="300"></canvas></div></div></div>
+    <div class="card"><h2 i18n="chart_curves_title">منحنيات تدريب LSTM (الدقة والخسارة)</h2><div class="chart-container"><div class="chart-box"><canvas id="lstmAccuracyChart"></canvas></div><div class="chart-box"><canvas id="lstmLossChart"></canvas></div></div></div>
+  </div>
+
+  <!-- عن المطور -->
+  <div id="about" class="content-pane">
+    <div class="card"><h2><span class="developer-icon">👨‍💻</span> <span i18n="about_title">المطور والدور في المشروع</span></h2>
+      <p i18n="about_name"><strong>الاسم:</strong> Zeyad Talal Al-Mashuoq (رقم 103)</p>
+      <p i18n="about_role"><strong>الدور:</strong> قمت ببناء نظام كشف الأخبار المزيفة من الصفر: تنظيف البيانات، TF-IDF و tokenization، تدريب 3 نماذج تعلم آلي وشبكة LSTM، التقييم، وإنشاء هذه الواجهة التفاعلية مع الرسوم البيانية.</p>
+      <p i18n="about_tools"><strong>الأدوات:</strong> Python, Pandas, Scikit-learn, TensorFlow/Keras, NLTK, Matplotlib, Seaborn, Chart.js.</p>
+      <p i18n="about_learnings"><strong>ما تعلمته:</strong> أهمية تنظيف النصوص، تجنب data leakage، الفرق بين TF-IDF و Embedding، استخدام Dropout، وإنشاء لوحات تحكم مرئية.</p>
+    </div>
+    <div class="card"><h2 i18n="summary_title">ملخص المشروع النهائي</h2>
+      <p i18n="summary_text">نظام متكامل دقته >98%، أفضل نموذج هو Logistic Regression للسرعة والدقة، و LSTM للفهم العميق. يمكن استخدامه في تطبيقات فورية لكشف الأخبار المضللة.</p>
+    </div>
+  </div>
+
+  <div class="footer-note"><span i18n="footer_text">Zeyad Talal Al-Mashuoq (103) — مشروع كشف الأخبار المزيفة | أكاديمية طويق</span></div>
+</div>
+
+<script>
+  // ------------------------------ الترجمة الكاملة ------------------------------
+  const translations = {
+    ar: {
+      tab_overview: "نظرة عامة", tab_models: "النماذج", tab_results: "النتائج والمقارنة", tab_charts: "رسوم بيانية", tab_about: "عن المطور",
+      overview_title1: "ما هو نظام كشف الأخبار المزيفة؟",
+      overview_text1: "هذا المشروع يبني نموذج ذكاء اصطناعي يميز بين الخبر الحقيقي والمزيف باستخدام تعلم الآلة والشبكات العصبية (LSTM). تم استخدام مجموعة بيانات حقيقية من Kaggle تحتوي على 44,898 مقالاً (21,417 حقيقي، 23,481 مزيف).",
+      overview_text2: "<strong>الخطوات الأساسية:</strong> تنظيف النصوص، تحويل الكلمات إلى أرقام، تدريب 3 نماذج تعلم آلي وشبكة LSTM، ثم مقارنة الأداء باستخدام F1-score.",
+      data_title: "البيانات والتنظيف",
+      real_count: "أخبار حقيقية: 21,417", fake_count: "أخبار مزيفة: 23,481", total_count: "المجموع: 44,898 مقال",
+      data_desc: "مجموعة بيانات من Kaggle تحتوي على 44,898 مقالاً (21,417 حقيقي، 23,481 مزيف).",
+      cleaning_steps: "<strong>خطوات التنظيف:</strong> تحويل الحروف إلى صغيرة، إزالة الرموز والأرقام، إزالة stopwords (مثل 'the', 'and')، وإزالة التكرارات. تم حفظ النص النظيف في عمود clean_text.",
+      cleaning_note: "هذه المرحلة ضرورية جداً لأن النصوص غير النظيفة تسبب ضعفاً في أداء النماذج.",
+      simple_title: "شرح مبسط (لغير المبرمجين)",
+      simple_li1: "تدريب الحاسوب على آلاف الأمثلة من الأخبار الحقيقية والمزيفة.",
+      simple_li2: "تنظيف النص من الرموز والكلمات غير المفيدة.",
+      simple_li3: "تحويل الكلمات إلى أرقام ليتمكن النموذج من فهمها.",
+      simple_li4: "تدريب 3 نماذج تعلم آلي وشبكة LSTM.",
+      simple_li5: "مقارنة الأداء واختيار الأفضل باستخدام F1-score.",
+      simple_result: "النتيجة: أفضل نموذج هو Logistic Regression (F1=0.989) والشبكة LSTM (0.985) – دقة عالية جداً.",
+      ml_title: "نماذج التعلم الآلي (Machine Learning)",
+      ml_desc: "تم تحويل النص إلى أرقام باستخدام TF-IDF (5000 كلمة). النماذج المدربة:",
+      ml_lr: "<strong>Logistic Regression:</strong> نموذج خطي سريع ممتاز للنصوص عالية الأبعاد.",
+      ml_rf: "<strong>Random Forest:</strong> 200 شجرة قرار، أداء جيد لكن أبطأ.",
+      ml_knn: "<strong>K-Nearest Neighbors (KNN):</strong> نموذج قائم على الجيران، أضعف مع البيانات النصية المتفرقة.",
+      ml_eval: "أفضل أداء كان لـ Logistic Regression (F1=0.989).",
+      lstm_title: "الشبكة العصبية LSTM",
+      lstm_desc: "شبكة LSTM (Long Short‑Term Memory) متخصصة في تسلسل الكلمات وسياق الجملة. البنية المستخدمة:",
+      lstm_layer1: "Embedding (10000, 64) → متجهات كثيفة للكلمات.",
+      lstm_layer2: "LSTM (64 وحدة) → تعلم العلاقات الزمنية.",
+      lstm_layer3: "Dropout (0.3) لمنع overfitting.",
+      lstm_layer4: "Dense (32) + Dense (1, Sigmoid) للتصنيف الثنائي.",
+      lstm_train: "تم تدريب النموذج لمدة 10 عصور (epochs) وحجم دفعة 64. نتائج LSTM: دقة 98.5% و F1=0.985.",
+      compare_title: "جدول المقارنة النهائي",
+      th_model: "النموذج", th_acc: "Accuracy", th_prec: "Precision", th_rec: "Recall", th_f1: "F1-Score",
+      model_lr: "Logistic Regression", model_rf: "Random Forest", model_knn: "KNN", model_lstm: "LSTM (Neural Network)",
+      best_statement: "<strong>التحليل:</strong> Logistic Regression هو الأفضل من حيث التوازن بين السرعة والدقة (F1=0.989). LSTM قريب جداً مع فهم أعمق للسياق.",
+      cm_title: "مصفوفة الارتباك لأفضل نموذج (Logistic Regression)",
+      cm_tp: "حقيقي → توقع حقيقي: 4231", cm_fp: "حقيقي → توقع مزيف: 48", cm_fn: "مزيف → توقع حقيقي: 31", cm_tn: "مزيف → توقع مزيف: 4180",
+      conclusion: "الخلاصة: كلا النهجين يصلحان، لكن Logistic Regression مثالي للتطبيقات العملية لسرعة تدريبه العالية.",
+      chart_f1_title: "مقارنة F1-Score للنماذج",
+      chart_heat_title: "مصفوفة الارتباك بشكل حراري (Logistic Regression)",
+      chart_curves_title: "منحنيات تدريب LSTM (الدقة والخسارة)",
+      about_title: "المطور والدور في المشروع",
+      about_name: "<strong>الاسم:</strong> Zeyad Talal Al-Mashuoq (رقم 103)",
+      about_role: "<strong>الدور:</strong> قمت ببناء نظام كشف الأخبار المزيفة من الصفر: تنظيف البيانات، TF-IDF و tokenization، تدريب 3 نماذج تعلم آلي وشبكة LSTM، التقييم، وإنشاء هذه الواجهة التفاعلية مع الرسوم البيانية.",
+      about_tools: "<strong>الأدوات:</strong> Python, Pandas, Scikit-learn, TensorFlow/Keras, NLTK, Matplotlib, Seaborn, Chart.js.",
+      about_learnings: "<strong>ما تعلمته:</strong> أهمية تنظيف النصوص، تجنب data leakage، الفرق بين TF-IDF و Embedding، استخدام Dropout، وإنشاء لوحات تحكم مرئية.",
+      summary_title: "ملخص المشروع النهائي",
+      summary_text: "نظام متكامل دقته >98%، أفضل نموذج هو Logistic Regression للسرعة والدقة، و LSTM للفهم العميق. يمكن استخدامه في تطبيقات فورية لكشف الأخبار المضللة.",
+      footer_text: "Zeyad Talal Al-Mashuoq (103) — مشروع كشف الأخبار المزيفة | أكاديمية طويق",
+      // أسماء الألوان
+      theme_blue: "🎨 أزرق فاتح", theme_green: "🌿 أخضر فاتح", theme_orange: "🍊 برتقالي داكن", theme_dark: "🌙 داكن (ليلي)", theme_purple: "💜 أرجواني فاتح"
+    },
+    en: {
+      tab_overview: "Overview", tab_models: "Models", tab_results: "Results & Comparison", tab_charts: "Charts", tab_about: "Developer",
+      overview_title1: "What is Fake News Detection?",
+      overview_text1: "This project builds an AI model to distinguish real from fake news using ML and LSTM. A real dataset from Kaggle is used containing 44,898 articles (21,417 real, 23,481 fake).",
+      overview_text2: "<strong>Main steps:</strong> text cleaning, word conversion, training 3 ML models + LSTM, then comparison using F1-score.",
+      data_title: "Dataset & Cleaning",
+      real_count: "Real news: 21,417", fake_count: "Fake news: 23,481", total_count: "Total: 44,898 articles",
+      data_desc: "Kaggle dataset: 44,898 articles (21,417 real, 23,481 fake).",
+      cleaning_steps: "<strong>Cleaning steps:</strong> lowercasing, remove punctuation/digits, remove stopwords (e.g., 'the', 'and'), drop duplicates. Clean text stored in column clean_text.",
+      cleaning_note: "This step is crucial because raw text degrades model performance.",
+      simple_title: "Simple Explanation (non-technical)",
+      simple_li1: "Train computer on thousands of real/fake examples.",
+      simple_li2: "Clean text from symbols and common words.",
+      simple_li3: "Convert words to numbers so the model can understand.",
+      simple_li4: "Train 3 ML models (Logistic Regression, Random Forest, KNN) and LSTM network.",
+      simple_li5: "Compare performance and choose best using F1-score.",
+      simple_result: "Result: Best model is Logistic Regression (F1=0.989) and LSTM (0.985) — extremely high accuracy.",
+      ml_title: "Machine Learning Models",
+      ml_desc: "Text converted using TF-IDF (5000 features). Models trained:",
+      ml_lr: "<strong>Logistic Regression:</strong> fast linear model, excellent for high-dim text.",
+      ml_rf: "<strong>Random Forest:</strong> 200 decision trees, good but slower.",
+      ml_knn: "<strong>K-Nearest Neighbors (KNN):</strong> neighbor‑based, weaker on sparse text.",
+      ml_eval: "Best performance: Logistic Regression (F1=0.989).",
+      lstm_title: "LSTM Neural Network",
+      lstm_desc: "LSTM specializes in sequence understanding and context. Architecture:",
+      lstm_layer1: "Embedding (10000, 64) → dense word vectors.",
+      lstm_layer2: "LSTM (64 units) → learns temporal order.",
+      lstm_layer3: "Dropout (0.3) to reduce overfitting.",
+      lstm_layer4: "Dense (32) + Dense (1, Sigmoid) for binary classification.",
+      lstm_train: "Trained for 10 epochs, batch size 64. LSTM results: 98.5% accuracy, F1=0.985.",
+      compare_title: "Final Comparison Table",
+      th_model: "Model", th_acc: "Accuracy", th_prec: "Precision", th_rec: "Recall", th_f1: "F1-Score",
+      model_lr: "Logistic Regression", model_rf: "Random Forest", model_knn: "KNN", model_lstm: "LSTM (Neural Network)",
+      best_statement: "<strong>Analysis:</strong> Best model balancing speed & accuracy is Logistic Regression (F1=0.989). LSTM gives deeper context but slower.",
+      cm_title: "Confusion Matrix (Best Model: Logistic Regression)",
+      cm_tp: "Real → Predicted Real: 4231", cm_fp: "Real → Predicted Fake: 48", cm_fn: "Fake → Predicted Real: 31", cm_tn: "Fake → Predicted Fake: 4180",
+      conclusion: "Conclusion: Both approaches work, but Logistic Regression is ideal for real‑time applications due to low training cost.",
+      chart_f1_title: "F1-Score Comparison",
+      chart_heat_title: "Confusion Matrix Heatmap (Logistic Regression)",
+      chart_curves_title: "LSTM Training Curves (Accuracy & Loss)",
+      about_title: "Developer & Role",
+      about_name: "<strong>Name:</strong> Zeyad Talal Al-Mashuoq (ID 103)",
+      about_role: "<strong>Role:</strong> Built complete fake news detection pipeline: data cleaning, TF‑IDF/tokenization, training 3 ML models + LSTM, evaluation, and interactive dashboard with charts.",
+      about_tools: "<strong>Tech stack:</strong> Python, Pandas, Scikit‑learn, TensorFlow/Keras, NLTK, Matplotlib, Seaborn, Chart.js.",
+      about_learnings: "<strong>Key learnings:</strong> data cleaning importance, avoiding data leakage, TF‑IDF vs Embedding, using Dropout, and creating visual dashboards.",
+      summary_title: "Final Summary",
+      summary_text: "End‑to‑end system achieving >98% accuracy. Logistic Regression provides best balance of speed and accuracy; LSTM offers deeper NLP understanding. Suitable for real‑time fake news detection.",
+      footer_text: "Zeyad Talal Al-Mashuoq (103) — Fake News Detection | Tuwaiq Academy",
+      // أسماء الألوان بالإنجليزية
+      theme_blue: "🎨 Light Blue", theme_green: "🌿 Light Green", theme_orange: "🍊 Orange Dark", theme_dark: "🌙 Dark (Night)", theme_purple: "💜 Light Purple"
+    }
+  };
+
+  let currentLang = 'ar';
+  function setLanguage(lang) {
+    const t = translations[lang];
+    // تحديث كل العناصر التي تحمل السمة i18n
+    document.querySelectorAll('[i18n]').forEach(el => {
+      const key = el.getAttribute('i18n');
+      if (t[key]) {
+        if (el.tagName === 'BUTTON' || el.tagName === 'H2' || el.tagName === 'P' || el.tagName === 'LI' || el.tagName === 'TH' || el.tagName === 'TD' || el.tagName === 'SPAN') {
+          el.innerHTML = t[key];
+        } else if (el.classList.contains('stat-card')) {
+          el.innerText = t[key];
+        } else {
+          el.innerText = t[key];
+        }
+      }
+    });
+    // تحديث أزرار التبويب يدوياً (لأنها تحتوي على النص الأصلي)
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const key = btn.getAttribute('data-tab');
+      if (key === 'overview') btn.innerText = t.tab_overview;
+      else if (key === 'models') btn.innerText = t.tab_models;
+      else if (key === 'results') btn.innerText = t.tab_results;
+      else if (key === 'charts') btn.innerText = t.tab_charts;
+      else if (key === 'about') btn.innerText = t.tab_about;
+    });
+    // تحديث خيارات القائمة المنسدلة للألوان
+    const select = document.getElementById('themeSelect');
+    for (let i = 0; i < select.options.length; i++) {
+      const opt = select.options[i];
+      if (opt.value === 'blue') opt.text = t.theme_blue;
+      else if (opt.value === 'green') opt.text = t.theme_green;
+      else if (opt.value === 'orange') opt.text = t.theme_orange;
+      else if (opt.value === 'dark') opt.text = t.theme_dark;
+      else if (opt.value === 'purple') opt.text = t.theme_purple;
+    }
+    // تحديث اتجاه الصفحة
+    document.body.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+    currentLang = lang;
+    // تحديث عنوان الرسم البياني (محور السينات) قد يتطلب إعادة رسم
+    refreshCharts();
+    // تحديث نص زر الترجمة
+    const langBtn = document.getElementById('langToggleBtn');
+    langBtn.innerHTML = (lang === 'ar') ? '🌐 English / العربية' : '🌐 العربية / English';
+  }
+
+  // ------------------------------ الرسوم البيانية ------------------------------
+  let f1Chart, accChart, lossChart;
+  const lstmAccData = [0.8800, 0.9310, 0.9470, 0.9730, 0.9782, 0.9834, 0.9921, 0.9947, 0.9941, 0.9965];
+  const lstmValAccData = [0.9650, 0.9245, 0.9477, 0.9751, 0.9652, 0.9782, 0.9755, 0.9775, 0.9829, 0.9801];
+  const lstmLossData = [0.3064, 0.1987, 0.1443, 0.0918, 0.0784, 0.0650, 0.0358, 0.0249, 0.0259, 0.0183];
+  const lstmValLossData = [0.1289, 0.1494, 0.1509, 0.0998, 0.1412, 0.0849, 0.0980, 0.0919, 0.0801, 0.0947];
+
+  function initBarChart() {
+    const ctx = document.getElementById('f1Chart').getContext('2d');
+    const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+    const gridColor = getComputedStyle(document.body).getPropertyValue('--chart-grid').trim();
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+    if (f1Chart) f1Chart.destroy();
+    f1Chart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: ['Logistic Regression', 'Random Forest', 'KNN', 'LSTM'], datasets: [{ label: currentLang === 'ar' ? 'F1-Score' : 'F1 Score', data: [0.989, 0.981, 0.949, 0.985], backgroundColor: [accent, '#f59e0b', '#ef4444', '#8b5cf6'], borderRadius: 8 }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: textColor } }, tooltip: { callbacks: { label: (ctx) => ctx.raw.toFixed(3) } } }, scales: { y: { beginAtZero: true, max: 1, grid: { color: gridColor }, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
+    });
+  }
+
+  function drawHeatmap() {
+    const canvas = document.getElementById('confusionHeatmap');
+    const ctx = canvas.getContext('2d');
+    const size = 300;
+    canvas.width = size; canvas.height = size;
+    const cellW = size / 2;
+    const cellH = size / 2;
+    const matrix = [[4231, 48], [31, 4180]];
+    const maxVal = 4300;
+    const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+    ctx.clearRect(0, 0, size, size);
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        const val = matrix[i][j];
+        const intensity = val / maxVal;
+        const r = 37 + (1-intensity)*80; const g = 99 + (1-intensity)*80; const b = 235 + (1-intensity)*20;
+        ctx.fillStyle = `rgb(${Math.min(255,r)}, ${Math.min(255,g)}, ${Math.min(255,b)})`;
+        ctx.fillRect(j*cellW, i*cellH, cellW, cellH);
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--border').trim();
+        ctx.strokeRect(j*cellW, i*cellH, cellW, cellH);
+        ctx.fillStyle = textColor;
+        ctx.font = `bold ${Math.max(16, cellW/6)}px "Inter"`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(val, j*cellW + cellW/2, i*cellH + cellH/2);
+      }
+    }
+    const labels = currentLang === 'ar' ? { rows: ['حقيقي', 'مزيف'], cols: ['حقيقي', 'مزيف'] } : { rows: ['Real', 'Fake'], cols: ['Real', 'Fake'] };
+    ctx.font = `14px "Inter"`;
+    ctx.fillStyle = textColor;
+    for (let j=0; j<2; j++) ctx.fillText(labels.cols[j], j*cellW + cellW/2, 20);
+    for (let i=0; i<2; i++) ctx.fillText(labels.rows[i], 15, i*cellH + cellH/2);
+  }
+
+  function initLSTMCurves() {
+    const ctxAcc = document.getElementById('lstmAccuracyChart').getContext('2d');
+    const ctxLoss = document.getElementById('lstmLossChart').getContext('2d');
+    const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+    const gridColor = getComputedStyle(document.body).getPropertyValue('--chart-grid').trim();
+    if (accChart) accChart.destroy();
+    if (lossChart) lossChart.destroy();
+    const xLabel = currentLang === 'ar' ? 'العصر' : 'Epoch';
+    accChart = new Chart(ctxAcc, {
+      type: 'line', data: { labels: Array.from({length:10}, (_,i)=>i+1), datasets: [{ label: currentLang === 'ar' ? 'تدريب' : 'Train', data: lstmAccData, borderColor: '#3b82f6', tension: 0.2 }, { label: currentLang === 'ar' ? 'تحقق' : 'Validation', data: lstmValAccData, borderColor: '#f59e0b', tension: 0.2 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: textColor } } }, scales: { y: { beginAtZero: true, max: 1, grid: { color: gridColor }, ticks: { color: textColor } }, x: { title: { display: true, text: xLabel, color: textColor }, ticks: { color: textColor } } } }
+    });
+    lossChart = new Chart(ctxLoss, {
+      type: 'line', data: { labels: Array.from({length:10}, (_,i)=>i+1), datasets: [{ label: currentLang === 'ar' ? 'تدريب' : 'Train', data: lstmLossData, borderColor: '#3b82f6', tension: 0.2 }, { label: currentLang === 'ar' ? 'تحقق' : 'Validation', data: lstmValLossData, borderColor: '#f59e0b', tension: 0.2 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: textColor } } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }, x: { title: { display: true, text: xLabel, color: textColor }, ticks: { color: textColor } } } }
+    });
+  }
+
+  function refreshCharts() { initBarChart(); drawHeatmap(); initLSTMCurves(); }
+
+  // ------------------------------ الثيم ------------------------------
+  const themeSelect = document.getElementById('themeSelect');
+  function setTheme(themeName) {
+    document.body.classList.remove('theme-blue','theme-green','theme-orange','theme-dark','theme-purple');
+    document.body.classList.add(`theme-${themeName}`);
+    localStorage.setItem('selectedTheme', themeName);
+    themeSelect.value = themeName;
+    refreshCharts();
+  }
+  const savedTheme = localStorage.getItem('selectedTheme');
+  if (savedTheme && ['blue','green','orange','dark','purple'].includes(savedTheme)) setTheme(savedTheme);
+  else setTheme('blue');
+  themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+
+  // ------------------------------ التبويبات ------------------------------
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panes = document.querySelectorAll('.content-pane');
+  function activateTab(tabId) {
+    panes.forEach(p => p.classList.remove('active-pane'));
+    document.getElementById(tabId).classList.add('active-pane');
+    tabs.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    if (tabId === 'charts') setTimeout(refreshCharts, 50);
+  }
+  tabs.forEach(btn => btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab'))));
+
+  // ------------------------------ زر الترجمة ------------------------------
+  const langBtn = document.getElementById('langToggleBtn');
+  langBtn.addEventListener('click', () => {
+    const newLang = currentLang === 'ar' ? 'en' : 'ar';
+    setLanguage(newLang);
+  });
+
+  // بدء التشغيل
+  setLanguage('ar');
+  window.addEventListener('resize', () => { if (document.getElementById('charts').classList.contains('active-pane')) refreshCharts(); });
+</script>
+</body>
+</html>
